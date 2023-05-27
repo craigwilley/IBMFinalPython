@@ -8,6 +8,8 @@ from django.urls import reverse
 from django.views import generic
 from django.contrib.auth import login, logout, authenticate
 import logging
+from django.shortcuts import render, get_object_or_404
+from .models import Lesson
 # Get an instance of a logger
 logger = logging.getLogger(__name__)
 # Create your views here.
@@ -101,6 +103,15 @@ def enroll(request, course_id):
         course.save()
 
     return HttpResponseRedirect(reverse(viewname='onlinecourse:course_details', args=(course.id,)))
+
+def lesson_exam(request, lesson_id):
+    lesson = get_object_or_404(Lesson, pk=lesson_id)
+    return render(request, 'onlinecourse/lesson_exam.html', {'lesson': lesson})
+
+def submit_exam(request, lesson_id):
+    # Handle the form submission and process the exam here
+    pass
+
 
 
 # <HINT> Create a submit view to create an exam submission record for a course enrollment,
