@@ -10,7 +10,7 @@
  <nav class="navbar navbar-light bg-light">
     <div class="container-fluid">
         <div class="navbar-header">
-            <a class="navbar-brand" href="{% url 'onlinecourse:index' %}">Home</a>
+              <a class="navbar-brand" href="{% url 'onlinecourse:index' %}">Home</a>
         </div>
         <ul class="nav navbar-nav navbar-right">
             {% if user.is_authenticated %}
@@ -24,7 +24,7 @@
                     {% csrf_token %}
                     <div class="input-group">
                         <input type="text" class="form-control" placeholder="Username" name="username" >
-                        <input type="password" class="form-control" placeholder="Password" name="psw" >
+                        <input type="password" class="form-control" placeholder="Username" name="psw" >
                         <button class="btn btn-primary" type="submit">Login</button>
                         <a class="btn btn-link" href="{% url 'onlinecourse:registration' %}">Sign Up</a>
                     </div>
@@ -36,40 +36,36 @@
 </nav>
 
 <div class="container-fluid">
-    <h2>Exam Results</h2>
-    <p>Your score: {{ grade }}</p>
-
-{% if pass_exam %}
+    {% if grade > 80 %}
     <div class="alert alert-success">
-        Congratulations, you've passed the exam with a grade of {{ grade }}%!
+       <p>Congratulation, {{ user.username }}! you have  passed the exam your score is {{grade}}/100<p>
     </div>
-{% else %}
-    <div class="alert alert-danger">
-        Unfortunately, you did not pass the exam. Your grade is {{ grade }}%. Better luck next time!
-        <a class="btn btn-link text-danger" href="{% url 'onlinecourse:lesson_exam' lesson.id %}">Retake Exam</a>
+        {% else %}
+        <div class="alert alert-danger">
+              <p>Failed, {{ user.username }}! you have  failed the exam your score is {{grade}}/100<p>
+        </div>
+        <a class="btn btn-link text-danger" href="{% url 'onlinecourse:course_details' course.id %}">Re-test</a>
+        {% endif %}
+        <div class="card-columns-vertical mt-1">
+        <h5 class="">Exam results</h5>
+             <div class="card mt-1">
+                {% for question in course.question_set.all%}
+                <div class="card-header"><h5>{{question.question_text}}</h5></div>
+                    <div class="card-body">
+                        {% for choice in question.choice_set.all %}
+                            <div class="form-check">
+                                <label class="form-check-label">
+                                    {% if choice.is_correct is True %}
+                                        <p style="color: green;">Correct answer: {{choice.choice_text}}</p>
+                                    {% else %}
+                                        <p style="color: red;">Incorrect answer: {{choice.choice_text}}</p>
+                                    {% endif %}
+                            </div>    
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
     </div>
-{% endif %}
-
-
-<div class="card-columns-vertical mt-1">
-    <h5 class="">Exam results</h5>
-    <!-- Display incorrect questions -->
-    <h3>Incorrect Questions</h3>
-    <ul>
-    {% for question in incorrect_choices %}
-        <li>{{ question }}</li>
-    {% endfor %}
-    </ul>
-    <!-- Display correct questions -->
-    <h3>Correct Questions</h3>
-    <ul>
-    {% for question in correct_choices %}
-        <li>{{ question }}</li>
-    {% endfor %}
-    </ul>
-</div>
-
-</div>
-
 </body>
 </html>

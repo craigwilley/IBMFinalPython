@@ -1,6 +1,13 @@
+import sys
 from django.utils.timezone import now
-from django.db import models
+try:
+    from django.db import models
+except Exception:
+    print("There was an error loading django modules. Do you have django installed?")
+    sys.exit()
+
 from django.conf import settings
+import uuid
 
 
 # Instructor model
@@ -52,15 +59,14 @@ class Course(models.Model):
     description = models.CharField(max_length=1000)
     pub_date = models.DateField(null=True)
     instructors = models.ManyToManyField(Instructor)
-    users = models.ManyToManyField(settings.AUTH_USER_MODEL, through='Enrollment')
+    users = models.ManyToManyField(
+        settings.AUTH_USER_MODEL, through='Enrollment')
     total_enrollment = models.IntegerField(default=0)
-
-    def is_enrolled(self, user):
-        return self.users.filter(id=user.id).exists()
+    is_enrolled = False
 
     def __str__(self):
         return "Name: " + self.name + "," + \
-            "Description: " + self.description
+               "Description: " + self.description
 
 
 # Lesson model
@@ -72,6 +78,8 @@ class Lesson(models.Model):
 
 
 # Enrollment model
+# <HINT> Once a user enrolled a class, an enrollment entry should be created between the user and course
+# And we could use the enrollment to track information such as exam submissions
 class Enrollment(models.Model):
     AUDIT = 'audit'
     HONOR = 'honor'
@@ -81,46 +89,43 @@ class Enrollment(models.Model):
         (HONOR, 'Honor'),
         (BETA, 'BETA')
     ]
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL,
+                             on_delete=models.CASCADE)
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
     date_enrolled = models.DateField(default=now)
     mode = models.CharField(max_length=5, choices=COURSE_MODES, default=AUDIT)
     rating = models.FloatField(default=5.0)
 
 
-# Question model
+# Used to persist question content for a course
 class Question(models.Model):
+    course = models.ManyToManyField(Course)
     lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE)
-    question_text = models.CharField(max_length=200)
-    grade = models.FloatField(default=1.0)
+    question_text = models.CharField(max_length=600, default="text")
+    grade = models.IntegerField(default=0)
 
     def is_get_score(self, selected_ids):
         all_answers = self.choice_set.filter(is_correct=True).count()
-        selected_correct = self.choice_set.filter(is_correct=True, id__in=selected_ids).count()
+        selected_correct = self.choice_set.filter(
+            is_correct=True, id__in=selected_ids).count()
         if all_answers == selected_correct:
             return True
         else:
             return False
 
-    def __str__(self):
-        return self.question_text
 
-
-# Choice model
+# Used to persist choice content for a question
 class Choice(models.Model):
     question = models.ForeignKey(Question, on_delete=models.CASCADE)
-    choice_text = models.CharField(max_length=200)
+    # question_id = models.ManyToManyField(Question)
+    choice_text = models.CharField(max_length=100, default="text")
     is_correct = models.BooleanField(default=False)
 
-    def __str__(self):
-        return self.choice_text
+# One enrollment could have multiple submission
+# One submission could have multiple choices
+# One choice could belong to multiple submissions
 
 
-# Submission model
 class Submission(models.Model):
     enrollment = models.ForeignKey(Enrollment, on_delete=models.CASCADE)
     choices = models.ManyToManyField(Choice)
-    grade = models.FloatField(default=0.0)  # Add this field
-
-    def __str__(self):
-        return f'Submission {self.pk} for enrollment {self.enrollment.pk}'
