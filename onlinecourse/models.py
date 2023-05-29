@@ -99,19 +99,27 @@ class Enrollment(models.Model):
 
 # Used to persist question content for a course
 class Question(models.Model):
-    course = models.ManyToManyField(Course)
-    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE)
-    question_text = models.CharField(max_length=600, default="text")
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, null=True)
+    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, null=True, blank=True)
+    question_text = models.CharField(max_length=200)
     grade = models.IntegerField(default=0)
 
-    def is_get_score(self, selected_ids):
-        all_answers = self.choice_set.filter(is_correct=True).count()
-        selected_correct = self.choice_set.filter(
-            is_correct=True, id__in=selected_ids).count()
-        if all_answers == selected_correct:
-            return True
-        else:
-            return False
+    def get_score(self, choices):
+        correct_choices = self.choice_set.filter(is_correct=True)
+        incorrect_choices = self.choice_set.filter(is_correct=False)
+        correct_choices_ids = set(correct_choices.values_list('id', flat=True))
+        incorrect_choices_ids = set(incorrect_choices.values_list('id', flat=True))
+
+        print(f"Correct choices IDs: {correct_choices_ids}")
+        print(f"Incorrect choices IDs: {incorrect_choices_ids}")
+        print(f"Chosen choices IDs: {set(choice.id for choice in choices)}")
+
+        chosen_choices_ids = set(choice.id for choice in choices)
+
+        # calculate score as the ratio of correctly selected choices to all correct choices
+        score = len(correct_choices_ids & chosen_choices_ids) / len(correct_choices_ids)
+
+        return score
 
 
 # Used to persist choice content for a question

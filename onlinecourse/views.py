@@ -9,7 +9,6 @@ from django.contrib.auth import login, logout, authenticate
 import logging
 # Get an instance of a logger
 logger = logging.getLogger(__name__)
-# Create your views here.
 
 
 def registration_request(request):
@@ -121,7 +120,6 @@ def extract_answers(request):
             submitted_anwsers.append(choice_id)
     return submitted_anwsers
 
-
 def show_exam_result(request, course_id, submission_id):
     context = {}
     course = get_object_or_404(Course, pk=course_id)
@@ -131,28 +129,15 @@ def show_exam_result(request, course_id, submission_id):
     points = 0
     for question in questions:
         points += question.grade
-        if question.is_get_score(submission.choices.all()):
-            total_score += question.grade
-
-    grade = int(total_score/points * 100)
-    context['grade'] = grade
-    context['course'] = course
-    user_choices = submission.choices.all()
-    context['user_choices'] = user_choices
-    return render(request, 'onlinecourse/exam_result_bootstrap.html', context)
-
-
-def show_exam_result(request, course_id, submission_id):
-    context = {}
-    course = get_object_or_404(Course, pk=course_id)
-    submission = get_object_or_404(Submission, pk=submission_id)
-    questions = Question.objects.filter(course=course)
-    total_score = 0
-    points = 0
-    for question in questions:
-        points += question.grade
-        if question.is_get_score(submission.choices.all()):
-            total_score += question.grade
+        if hasattr(question, 'is_get_score'):
+            if question.is_get_score(submission.choices.all()):
+                total_score += question.grade
+        else:
+            selected_choices = submission.choices.filter(question=question)
+            if selected_choices.exists():
+                correct_choices = Choice.objects.filter(is_correct=True, question=question)
+                correct_selected_choices = correct_choices.intersection(selected_choices)
+                total_score += question.grade * len(correct_selected_choices) / len(correct_choices)
 
     grade = int(total_score/points * 100)
     context['grade'] = grade
