@@ -28,7 +28,7 @@
                         {% csrf_token %}
                         <div class="input-group">
                             <input type="text" class="form-control" placeholder="Username" name="username" >
-                            <input type="password" class="form-control" placeholder="Username" name="psw" >
+                            <input type="password" class="form-control" placeholder="Password" name="psw" >
                             <button class="btn btn-primary" type="submit">Login</button>
                             <a class="btn btn-link" href="{% url 'onlinecourse:registration' %}">Sign Up</a>
                         </div>
@@ -44,18 +44,55 @@
             <h2>{{ course.name }}</h2>
             <div class="card-columns-vertical">
                 {% for lesson in course.lesson_set.all %}
-    <div class="card mt-1">
-        <div class="card-header"><h5>Lesson {{lesson.order|add:1}}: {{lesson.title}}</h5></div>
-        <div class="card-body">{{lesson.content}}</div>
-        <!-- If user is authenticated, show the "Start Exam" button -->
-        {% if user.is_authenticated %}
-            <!-- Button to start the exam for this lesson -->
-            <button onclick="window.location.href='{% url 'onlinecourse:lesson_exam' lesson.id %}'" class="btn btn-primary">Start Exam</button>
-        {% endif %}
-    </div>
-{% endfor %}
-            </div>
+                    <div class="card mt-1">
+                        <div class="card-header"><h5>Lesson {{lesson.order|add:1}}: {{lesson.title}}</h5></div>
+                        <div class="card-body">{{lesson.content}}</div>
+                        <!-- If user is authenticated, show the "Start Exam" button -->
+                        {% if user.is_authenticated %}
+                            <!-- Button to start the exam for this lesson -->
+                            <button class="start-exam-btn btn btn-primary" data-lesson-id="{{lesson.id}}">Start Exam</button>
+                            <div class="exam-content" id="exam-content-{{lesson.id}}" style="display: none;">
+                                <!-- Exam content for this lesson -->
 
+                                <!-- Exam Content -->
+                                <form id="questionform-{{lesson.id}}" action="{% url 'onlinecourse:submit_exam' lesson.id %}" method="post">
+                                    {% csrf_token %}
+                                    <!-- Loop through each question -->
+                                    {% for question in lesson.question_set.all %}
+                                        <div class="card mt-1">
+                                            <div class="card-header"><h5>{{ question.question_text }}</h5></div>
+                                            <div class="form-group">
+                                                <!-- Loop through each choice -->
+                                                {% for choice in question.choice_set.all %}
+                                                    <div class="form-check">
+                                                        <label class="form-check-label">
+                                                            <input type="checkbox" name="choice_{{choice.id}}"
+                                                                   class="form-check-input" id="{{choice.id}}"
+                                                                   value="{{choice.id}}">{{ choice.choice_text }}
+                                                        </label>
+                                                    </div>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                    <input class="btn btn-success btn-block" type="submit" value="Submit">
+                                </form>
+
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
     </div>
+
+    <script>
+    $(document).ready(function(){
+        $(".start-exam-btn").click(function(){
+            var lessonId = $(this).data("lesson-id");
+            $("#exam-content-" + lessonId).toggle();
+        });
+    });
+    </script>
+
 </body>
 </html>

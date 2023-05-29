@@ -125,4 +125,5 @@ STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 MEDIA_ROOT = os.path.join(STATIC_ROOT, 'media')
 MEDIA_URL = '/media/'
-
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000
+LOGIN_URL = 'onlinecourse:login'
